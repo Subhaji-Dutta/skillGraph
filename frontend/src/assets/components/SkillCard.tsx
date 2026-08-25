@@ -23,7 +23,7 @@ export default function SkillCard({
                 <div className="skill-icon">
 
                 <img
-                    src={`https://cdn.simpleicons.org/${skill.icon}`}
+                    src={`https://cdn.simpleicons.org/${skill.name}`}
                     alt={`${skill.name} icon`}
                 />
             </div>
