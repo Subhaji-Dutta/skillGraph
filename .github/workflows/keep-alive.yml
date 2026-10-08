@@ -1,0 +1,31 @@
+name: Skill Graph Keep Alive
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Skill Graph backend and Neo4j
+        run: |
+          echo "Checking Skill Graph..."
+
+          response=$(curl --silent --show-error \
+            --write-out "\nHTTP_STATUS:%{http_code}" \
+            --max-time 120 \
+            https://skillgraph-2dho.onrender.com/stats)
+
+          echo "$response"
+
+          status=$(echo "$response" | grep "HTTP_STATUS" | cut -d: -f2)
+
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "Skill Graph check failed with HTTP status $status"
+            exit 1
+          fi
+
+          echo "Skill Graph backend + Neo4j check successful!"
