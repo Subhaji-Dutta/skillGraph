@@ -338,10 +338,10 @@ export default function Page() {
 
                             {/* Search */}
 
-                            <SearchBar
+                            {/* <SearchBar
                                 value={searchTerm}
                                 onChange={setSearchTerm}
-                            />
+                            /> */}
 
 
                             {/* Results */}
