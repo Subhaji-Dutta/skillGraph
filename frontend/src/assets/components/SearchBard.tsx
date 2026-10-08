@@ -55,22 +55,18 @@ export default function SearchBar({
             {/* Search input */}
 
             <input
-                className="search-input"
-                type="text"
-                value={value}
-                placeholder="Search skills, technologies or categories..."
-                onChange={(e) =>
-                    onChange(e.target.value)
-                }
-                onFocus={() =>
-                    setFocused(true)
-                }
-                onBlur={() =>
-                    setFocused(false)
-                }
-                aria-label="Search skills"
-                autoComplete="off"
-            />
+  id="skill-search"
+  name="skill-search"
+  className="search-input"
+  type="text"
+  value={value}
+  placeholder="Search skills, technologies or categories..."
+  onChange={(e) => onChange(e.target.value)}
+  onFocus={() => setFocused(true)}
+  onBlur={() => setFocused(false)}
+  aria-label="Search skills"
+  autoComplete="off"
+/>
 
 
             {/* Clear button */}
