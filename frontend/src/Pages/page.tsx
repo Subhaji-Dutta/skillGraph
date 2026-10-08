@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import api from "../api";
 
@@ -8,258 +8,485 @@ import SearchBar from "../assets/components/SearchBard";
 import SkillGrid from "../assets/components/SkillGrid";
 import SkillDashboard from "../assets/components/SkillDashboard";
 import SkillStats from "../assets/components/SkillStats";
-import type{Skill, Roadmap, Job, Company, Stats, ApiSkill} from "../assets/components/skill";
 import SkillOverview from "../assets/components/SkillOverview";
 
-
+import type {
+    Skill,
+    Roadmap,
+    Job,
+    Company,
+    Stats,
+    ApiSkill,
+} from "../assets/components/skill";
 
 export default function Page() {
+    // --------------------------------------------------
+    // State
+    // --------------------------------------------------
 
     const [skills, setSkills] = useState<Skill[]>([]);
+
     const [roadmap, setRoadmap] = useState<Roadmap[]>([]);
     const [jobs, setJobs] = useState<Job[]>([]);
     const [companies, setCompanies] = useState<Company[]>([]);
-    const [showAllSkills, setShowAllSkills] = useState(false);
+
     const [selectedSkill, setSelectedSkill] =
         useState<Skill | null>(null);
 
-    const [searchTerm, setSearchTerm] =
-        useState("");
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const [showAllSkills, setShowAllSkills] =
+        useState(false);
 
     const [loading, setLoading] =
         useState(false);
-    
+
+    const [pageLoading, setPageLoading] =
+        useState(true);
+
+    const [error, setError] =
+        useState<string | null>(null);
+
     const [stats, setStats] = useState<Stats>({
-    skills: 0,
-    jobs: 0,
-    companies: 0
-});
+        skills: 0,
+        jobs: 0,
+        companies: 0,
+    });
 
-useEffect(() => {
 
-    const loadData = async () => {
+    // --------------------------------------------------
+    // Load initial page data
+    // --------------------------------------------------
+
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                setPageLoading(true);
+                setError(null);
+
+                const [skillsRes, statsRes] =
+                    await Promise.all([
+                        api.get("/skills"),
+                        api.get("/stats"),
+                    ]);
+
+                const formattedSkills: Skill[] =
+                    skillsRes.data.map(
+                        (item: ApiSkill) => ({
+                            id: item.skill
+                                .toLowerCase()
+                                .replace(/\s+/g, "-"),
+
+                            name: item.skill,
+
+                            level: item.level,
+
+                            icon: item.icon,
+
+                            category: item.category,
+                        })
+                    );
+
+                setSkills(formattedSkills);
+                setStats(statsRes.data);
+
+            } catch (err) {
+                console.error(
+                    "Error loading page data:",
+                    err
+                );
+
+                setError(
+                    "Unable to load Skill Graph data. Please try again."
+                );
+            } finally {
+                setPageLoading(false);
+            }
+        };
+
+        loadData();
+    }, []);
+
+
+    // --------------------------------------------------
+    // Search
+    // --------------------------------------------------
+
+    const filteredSkills = useMemo(() => {
+        const query = searchTerm
+            .trim()
+            .toLowerCase();
+
+        if (!query) {
+            return skills;
+        }
+
+        return skills.filter((skill) => {
+            const name =
+                skill.name.toLowerCase();
+
+            const category =
+                skill.category?.toLowerCase() ?? "";
+
+            return (
+                name.includes(query) ||
+                category.includes(query)
+            );
+        });
+    }, [skills, searchTerm]);
+
+
+    const isSearching =
+        searchTerm.trim().length > 0;
+
+
+    const visibleSkills =
+        isSearching || showAllSkills
+            ? filteredSkills
+            : filteredSkills.slice(0, 6);
+
+
+    // --------------------------------------------------
+    // Load selected skill details
+    // --------------------------------------------------
+
+    const loadSkillDetails = async (
+        skill: Skill
+    ) => {
+        setSelectedSkill(skill);
+        setShowAllSkills(false);
+
+        setLoading(true);
+
+        // Clear previous skill data immediately.
+        setRoadmap([]);
+        setJobs([]);
+        setCompanies([]);
 
         try {
+            const [
+                roadmapRes,
+                jobsRes,
+                companiesRes,
+            ] = await Promise.all([
+                api.get(
+                    `/roadmap/${encodeURIComponent(
+                        skill.name
+                    )}`
+                ),
 
-            const [skillsRes, statsRes] =
-                await Promise.all([
-                    api.get("/skills"),
-                    api.get("/stats")
-                ]);
+                api.get(
+                    `/jobs/${encodeURIComponent(
+                        skill.name
+                    )}`
+                ),
 
-            const formattedSkills: Skill[] =
-                skillsRes.data.map((item: ApiSkill) => ({
-                    id: item.skill
-                        .toLowerCase()
-                        .replace(/\s+/g, "-"),
+                api.get(
+                    `/companies/${encodeURIComponent(
+                        skill.name
+                    )}`
+                ),
+            ]);
 
-                    name: item.skill,
+            setRoadmap(roadmapRes.data);
+            setJobs(jobsRes.data);
+            setCompanies(companiesRes.data);
 
-                    level: item.level,
-                    icon:item.icon,
-                    category:item.category
-                }));
-
-            setSkills(formattedSkills);
-
-            setStats(statsRes.data);
-
-            console.log("Skills:", formattedSkills);
-            console.log("Stats:", statsRes.data);
+            // Scroll to dashboard after data is loaded.
+            setTimeout(() => {
+                document
+                    .querySelector(
+                        ".dashboard-section"
+                    )
+                    ?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                    });
+            }, 100);
 
         } catch (err) {
-
             console.error(
-                "Error loading page data:",
+                "Error loading skill details:",
                 err
             );
 
-        }
+            setRoadmap([]);
+            setJobs([]);
+            setCompanies([]);
 
+        } finally {
+            setLoading(false);
+        }
     };
 
-    loadData();
 
-}, []);
+    // --------------------------------------------------
+    // Search controls
+    // --------------------------------------------------
 
-    // -------------------------
-    // Load skills
-    // -------------------------
-
-  useEffect(() => {
-    api.get("/skills")
-        .then((res) => {
-            const formattedSkills: Skill[] = res.data.map(
-                (item: ApiSkill) => ({
-                    id: item.skill.toLowerCase().replace(/\s+/g, "-"),
-                    name: item.skill,
-                    level: item.level
-                })
-            );
-
-            console.log("Skills:", formattedSkills);
-
-            setSkills(formattedSkills);
-        })
-        .catch((err) => {
-            console.error("Error loading skills:", err);
-        });
-}, []);
+    const clearSearch = () => {
+        setSearchTerm("");
+        setShowAllSkills(false);
+    };
 
 
-    // -------------------------
-    // Load selected skill
-    // -------------------------
-
-const loadSkillDetails = async (skill: Skill) => {
-    setSelectedSkill(skill);
-    setShowAllSkills(false);
-
-    try {
-        const roadmapRes = await api.get(
-            `/roadmap/${encodeURIComponent(skill.name)}`
-        );
-
-        const jobsRes = await api.get(
-            `/jobs/${encodeURIComponent(skill.name)}`
-        );
-
-        const companiesRes = await api.get(
-            `/companies/${encodeURIComponent(skill.name)}`
-        );
-
-        setRoadmap(roadmapRes.data);
-        setJobs(jobsRes.data);
-        setCompanies(companiesRes.data);
-    } catch (err) {
-        console.error("Error loading skill details:", err);
-    }
-};
-
-    // -------------------------
-    // Search
-    // -------------------------
-
-    const filteredSkills = skills.filter((skill) =>
-        skill.name
-            .toLowerCase()
-            .includes(searchTerm.trim().toLowerCase())
-    );
-
-    const isSearching = searchTerm.trim().length > 0;
-
-const visibleSkills = isSearching
-    ? filteredSkills
-    : showAllSkills
-        ? filteredSkills
-        : filteredSkills.slice(0, 4);
-
+    // --------------------------------------------------
+    // Render
+    // --------------------------------------------------
 
     return (
-
         <div className="page">
 
             <Header />
 
             <main>
 
+                {/* -------------------------------- */}
+                {/* Initial loading */}
+                {/* -------------------------------- */}
 
-                <StatsSection
-                    skills={stats.skills}
-                    jobs={stats.jobs}
-                    companies={stats.companies}
-                />
+                {pageLoading ? (
 
+                    <section className="page-loading">
+                        <div className="loading-spinner" />
 
-                {/* Search */}
+                        <p>
+                            Loading Skill Graph...
+                        </p>
+                    </section>
 
-                <section className="skills-section">
+                ) : error ? (
 
-                    <div className="section-header">
+                    <section className="page-error">
 
-                        <div>
-
-                            <span className="section-label">
-                                EXPLORE
-                            </span>
-
-                            <h2>
-                                Skills
-                            </h2>
-
-                            <p>
-                                Select a skill to explore
-                                its career path.
-                            </p>
-
+                        <div className="page-error-icon">
+                            !
                         </div>
 
-                        <div className="skill-total">
-                            {filteredSkills.length} skills
-                        </div>
+                        <h2>
+                            Something went wrong
+                        </h2>
 
-                    </div>
+                        <p>
+                            {error}
+                        </p>
+
+                        <button
+                            type="button"
+                            className="retry-button"
+                            onClick={() =>
+                                window.location.reload()
+                            }
+                        >
+                            Try Again
+                        </button>
+
+                    </section>
+
+                ) : (
+
+                    <>
+                        {/* -------------------------------- */}
+                        {/* Statistics */}
+                        {/* -------------------------------- */}
+
+                        <StatsSection
+                            skills={stats.skills}
+                            jobs={stats.jobs}
+                            companies={stats.companies}
+                        />
 
 
-                    <SearchBar
-                        value={searchTerm}
-                        onChange={(value) => {
-        setSearchTerm(value);
-        setShowAllSkills(false);
-    }}
-                    />
+                        {/* -------------------------------- */}
+                        {/* Skills Explorer */}
+                        {/* -------------------------------- */}
+
+                        <section className="skills-section">
+
+                            <div className="section-header">
+
+                                <div>
+
+                                    <span className="section-label">
+                                        EXPLORE
+                                    </span>
+
+                                    <h2>
+                                        Skills
+                                    </h2>
+
+                                    <p>
+                                        Search a skill to discover
+                                        its learning path, career
+                                        opportunities and companies.
+                                    </p>
+
+                                </div>
 
 
-                    <SkillGrid
-                        skills={visibleSkills}
-                        onSelect={loadSkillDetails}
-                    />
-    {!isSearching && filteredSkills.length > 5 && (
-    <div className="show-more-container">
-        <button
-            className="show-more-button"
-            onClick={() => setShowAllSkills((prev) => !prev)}
-        >
-            {showAllSkills ? "Show Less" : "Show More"}
-        </button>
-    </div>
-)}
+                                <div className="skill-total">
 
-                </section>
+                                    {isSearching
+                                        ? `${filteredSkills.length} of ${skills.length} skills`
+                                        : `${skills.length} skills`
+                                    }
 
-               {selectedSkill && (
+                                </div>
 
-    <section className="dashboard-section">
+                            </div>
 
-        {loading ? (
 
-            <div className="loading">
-                Loading {selectedSkill.name}...
-            </div>
+                            {/* Search */}
 
-        ) : (
+                            <SearchBar
+                                value={searchTerm}
+                                onChange={setSearchTerm}
+                            />
 
-            <>
-                <SkillOverview skill={selectedSkill} />
 
-                <SkillStats
-                    skillName={selectedSkill.name}
-                    prerequisites={roadmap.length}
-                    jobs={jobs.length}
-                    companies={companies.length}
-                />
+                            {/* Results */}
 
-                <SkillDashboard
-                    skill={selectedSkill}
-                    roadmap={roadmap}
-                    jobs={jobs}
-                    companies={companies}
-                />
-            </>
-        )}
-    </section>
-)}
+                            {visibleSkills.length > 0 ? (
+
+                                <SkillGrid
+                                    skills={visibleSkills}
+                                    onSelect={loadSkillDetails}
+                                />
+
+                            ) : (
+
+                                <div className="no-results">
+
+                                    <div className="no-results-icon">
+                                        🔎
+                                    </div>
+
+                                    <h3>
+                                        No skills found
+                                    </h3>
+
+                                    <p>
+                                        We couldn't find a skill
+                                        matching "{searchTerm}".
+                                    </p>
+
+                                    <button
+                                        type="button"
+                                        className="clear-search-button"
+                                        onClick={clearSearch}
+                                    >
+                                        Clear search
+                                    </button>
+
+                                </div>
+
+                            )}
+
+
+                            {/* Show More */}
+
+                            {!isSearching &&
+                                filteredSkills.length > 6 && (
+
+                                    <div className="show-more-container">
+
+                                        <button
+                                            type="button"
+                                            className="show-more-button"
+                                            onClick={() =>
+                                                setShowAllSkills(
+                                                    (prev) => !prev
+                                                )
+                                            }
+                                        >
+                                            {showAllSkills
+                                                ? "Show Less"
+                                                : `Show All ${filteredSkills.length} Skills`
+                                            }
+                                        </button>
+
+                                    </div>
+                                )}
+
+                        </section>
+
+
+                        {/* -------------------------------- */}
+                        {/* Selected Skill Dashboard */}
+                        {/* -------------------------------- */}
+
+                        {selectedSkill && (
+
+                            <section
+                                className="dashboard-section"
+                            >
+
+                                {loading ? (
+
+                                    <div className="loading">
+
+                                        <div className="loading-spinner" />
+
+                                        <p>
+                                            Building your{" "}
+                                            <strong>
+                                                {selectedSkill.name}
+                                            </strong>{" "}
+                                            career path...
+                                        </p>
+
+                                    </div>
+
+                                ) : (
+
+                                    <>
+
+                                        <SkillOverview
+                                            skill={selectedSkill}
+                                        />
+
+                                        <SkillStats
+                                            skillName={
+                                                selectedSkill.name
+                                            }
+                                            prerequisites={
+                                                roadmap.length
+                                            }
+                                            jobs={
+                                                jobs.length
+                                            }
+                                            companies={
+                                                companies.length
+                                            }
+                                        />
+
+                                        <SkillDashboard
+                                            skill={
+                                                selectedSkill
+                                            }
+                                            roadmap={
+                                                roadmap
+                                            }
+                                            jobs={
+                                                jobs
+                                            }
+                                            companies={
+                                                companies
+                                            }
+                                        />
+
+                                    </>
+
+                                )}
+
+                            </section>
+                        )}
+
+                    </>
+                )}
+
             </main>
+
         </div>
     );
 }
