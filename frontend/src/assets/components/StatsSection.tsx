@@ -3,62 +3,65 @@ type Props = {
     jobs: number;
     companies: number;
 
-    labels?:{
+    labels?: {
         skills?: string;
         jobs?: string;
         companies?: string;
-    }
+    };
 };
 
 export default function StatsSection({
     skills,
     jobs,
     companies,
-    labels
+    labels,
 }: Props) {
+    const stats = [
+        {
+            label: labels?.skills ?? "Skills",
+            value: skills,
+            icon: "✦",
+            description: "Technologies to explore",
+        },
+        {
+            label: labels?.jobs ?? "Jobs",
+            value: jobs,
+            icon: "↗",
+            description: "Career opportunities",
+        },
+        {
+            label: labels?.companies ?? "Companies",
+            value: companies,
+            icon: "◈",
+            description: "Companies hiring",
+        },
+    ];
 
     return (
+        <section className="stats" aria-label="Skill Graph statistics">
+            {stats.map((stat) => (
+                <div className="stat-card" key={stat.label}>
 
-        <section className="stats">
+                    <div className="stat-icon" aria-hidden="true">
+                        {stat.icon}
+                    </div>
 
-            <div className="stat-card">
+                    <div className="stat-content">
+                        <span className="stat-label">
+                            {stat.label}
+                        </span>
 
-                <span>
-                    {labels?.skills ?? "Skills"}
-                </span>
+                        <strong className="stat-value">
+                            {stat.value}
+                        </strong>
 
-                <strong>
-                    {skills}
-                </strong>
+                        <span className="stat-description">
+                            {stat.description}
+                        </span>
+                    </div>
 
-            </div>
-
-
-            <div className="stat-card">
-
-                <span>
-                    {labels?.jobs ?? "Jobs"}
-                </span>
-
-                <strong>
-                    {jobs}
-                </strong>
-
-            </div>
-
-
-            <div className="stat-card">
-
-                <span>
-                    {labels?.companies ?? "Companies"}
-                </span>
-
-                <strong>
-                    {companies}
-                </strong>
-
-            </div>
-
+                </div>
+            ))}
         </section>
     );
 }
