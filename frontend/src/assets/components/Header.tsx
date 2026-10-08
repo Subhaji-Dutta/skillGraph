@@ -2,18 +2,41 @@ export default function Header() {
     return (
         <header className="header">
 
-            <h1>
-                Skill Graph Explorer
-            </h1>
+            <div className="hero-content">
 
-            <p>
-                Discover skills, learning roadmaps,
-                companies and careers.
-            </p>
+                <span className="hero-label">
+                    CAREER & LEARNING PLATFORM
+                </span>
 
-            <span className="hero-label">
-                        CAREER & LEARNING PLATFORM
+                <h1>
+                    Skill Graph
+                    <span> Explorer</span>
+                </h1>
+
+                <p className="hero-description">
+                    Explore skills, discover learning paths,
+                    and connect your expertise to real career opportunities.
+                </p>
+
+                <div className="hero-features">
+                    <span>
+                        <span className="hero-dot" />
+                        Skill Intelligence
                     </span>
+
+                    <span>
+                        <span className="hero-dot" />
+                        Learning Roadmaps
+                    </span>
+
+                    <span>
+                        <span className="hero-dot" />
+                        Career Insights
+                    </span>
+                </div>
+
+            </div>
+
         </header>
     );
 }
