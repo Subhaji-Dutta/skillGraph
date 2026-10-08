@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./venv/Scripts/python.exe --version)",
+      "Bash(./venv/Scripts/python.exe -c ' *)",
+      "Bash(D:/PycharmProjects/skillGraph/backend/venv/Scripts/python.exe -c ' *)",
+      "Bash(\"D:/PycharmProjects/skillGraph/backend/venv/Scripts/python.exe\" -m uvicorn main:app --host 127.0.0.1 --port 8000)",
+      "Bash(curl -s -m 10 http://127.0.0.1:8000/)",
+      "Bash(curl -s -m 15 http://127.0.0.1:8000/skills)",
+      "Bash(curl -s -m 15 http://127.0.0.1:8000/stats)",
+      "Read(//tmp/**)",
+      "Bash(netstat -ano)",
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"ProcessId=4896 or ProcessId=7916\")",
+      "Bash(openssl s_client -connect db-a254df3d.databases.cognodb.com:7687 -brief)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(npm run *)",
+      "WebSearch",
+      "Bash(git -C /d/PycharmProjects/skillGraph show HEAD:.gitignore)",
+      "Bash(git -C /d/PycharmProjects/skillGraph ls-files backend/.env)",
+      "Bash(git -C /d/PycharmProjects/skillGraph show HEAD:backend/main.py)",
+      "Bash(\"D:/PycharmProjects/skillGraph/backend/venv/Scripts/python.exe\" -)",
+      "WebFetch(domain:www.cognodb.com)",
+      "Bash(\"D:/PycharmProjects/skillGraph/backend/venv/Scripts/pip.exe\" index *)",
+      "Bash(\"D:/PycharmProjects/skillGraph/backend/venv/Scripts/pip.exe\" install *)",
+      "WebFetch(domain:cdn.simpleicons.org)",
+      "Bash(curl -s -m 10 \"https://api.simpleicons.org/slugs\")",
+      "Bash(curl -s -m 10 \"https://cdn.simpleicons.org/?search=amazon\")",
+      "WebFetch(domain:docs.cognodb.com)",
+      "Bash(curl -s -m 8 https://api.ipify.org)",
+      "WebFetch(domain:cognodb.com)"
+    ]
+  }
+}
